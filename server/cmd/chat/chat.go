@@ -5,14 +5,19 @@ import (
 	"fmt"
 
 	pb "github.com/clarencejychan/consolechat-grpc/console-chat"
+	"github.com/go-redis/redis"
 	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 )
 
 // ChatServiceServer implements the protobuf interface
-type ChatServiceServer struct{}
+type ChatServiceServer struct {
+	r *redis.Client
+}
 
-func Register() *ChatServiceServer {
-	return &ChatServiceServer{}
+func Register(r *redis.Client) *ChatServiceServer {
+	return &ChatServiceServer{
+		r: r,
+	}
 }
 
 // Connect adds a user into the redis servis
