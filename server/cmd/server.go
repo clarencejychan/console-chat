@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 
+	chat "github.com/clarencejychan/console-chat/server/cmd/chat"
+	pb "github.com/clarencejychan/consolechat-grpc/console-chat"
 	"google.golang.org/grpc"
 )
 
@@ -21,5 +23,6 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
+	pb.RegisterChatServiceServer(grpcServer, chat.Register())
 	grpcServer.Serve(lis)
 }

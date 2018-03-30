@@ -1,20 +1,20 @@
 syntax = "proto3";
-package console_chat
+package consolechat;
 
 // For an empty response.
 import "google/protobuf/empty.proto";
+option go_package = "consolechat.grpc";
 
 service ChatService {
     // Unary request to connect to the service.
-    rpc Connect (ConnectRequest) returns (google.protobuf.Empty);
+    rpc Connect (ConnectRequest) returns (google.protobuf.Empty){};
 
     // Unary request to return users connected.
-    rpc ListUsers (google.protobuf.Empty) returns (UserList);
+    rpc ListUsers (google.protobuf.Empty) returns (UserList){};
 
     // Bidirectional stream for chatting.
-    rpc ConsoleChat (stream Message) returns (stream Responses);
+    rpc ConsoleChat (stream Message) returns (stream Responses){};
 }
-
 
 message ConnectRequest {
     string user = 1;
