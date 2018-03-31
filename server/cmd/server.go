@@ -29,10 +29,12 @@ func main() {
 
 	// Subscribe to RedisPubSub
 	redis.InitPubSubChannel()
+	defer redis.PubSub.Close()
 
 	// Initialize gRPC server
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	fmt.Printf("Starting console chat on port %d...\n", *port)
+	fmt.Println("-----------------------")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

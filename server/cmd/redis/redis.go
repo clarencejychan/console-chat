@@ -29,6 +29,7 @@ func InitRedis(port string) (*Redis, error) {
 	return &Redis{Client: client}, nil
 }
 
+// Initializes the Pub/Sub Channel
 func (r *Redis) InitPubSubChannel() {
 	r.PubSub = r.Client.Subscribe("chat")
 }

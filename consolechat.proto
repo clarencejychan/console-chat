@@ -9,14 +9,14 @@ service ChatService {
     // Unary request to connect to the service.
     rpc Connect (ConnectRequest) returns (google.protobuf.Empty);
 
+    // Bidirectional stream for chatting.
+    rpc ConsoleChat (Message) returns (google.protobuf.Empty);
+
     // Unary request to return users connected.
     rpc ListUsers (google.protobuf.Empty) returns (UserList);
 
-    // Bidirectional stream for chatting.
-    rpc ConsoleChat (stream Message) returns (stream Responses);
-
     // Unary request to kill the connection.
-    rpc Disconnect (stream DisconnectRequest) returns (google.protobuf.Empty);
+    rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty);
 }
 
 
@@ -33,9 +33,6 @@ message UserList {
 }
 
 message Message {
-    string speak = 1;
-}
-
-message Responses {
-    string listen = 1;
+    string user = 1;
+    string speak = 2;
 }
