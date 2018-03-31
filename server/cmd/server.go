@@ -27,6 +27,9 @@ func main() {
 		log.Fatalf("failed to connect to redis client on %s", redisPort)
 	}
 
+	// Subscribe to RedisPubSub
+	redis.InitPubSubChannel()
+
 	// Initialize gRPC server
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	fmt.Printf("Starting console chat on port %d...\n", *port)
@@ -35,7 +38,7 @@ func main() {
 	}
 	grpcServer := grpc.NewServer()
 
-	// Register service methods
+	// Register Service Methods
 	pb.RegisterChatServiceServer(grpcServer, chat.Register(redis))
 
 	// Serve gRPC server

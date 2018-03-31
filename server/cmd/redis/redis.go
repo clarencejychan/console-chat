@@ -6,8 +6,13 @@ import (
 	r "github.com/go-redis/redis"
 )
 
+type Redis struct {
+	Client *r.Client
+	PubSub *r.PubSub
+}
+
 // InitRedis initializes redis client.
-func InitRedis(port string) (*r.Client, error) {
+func InitRedis(port string) (*Redis, error) {
 	fmt.Println("Starting redis client listening on 6379")
 	opts := &r.Options{
 		Addr:     port,
@@ -20,5 +25,10 @@ func InitRedis(port string) (*r.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return client, nil
+
+	return &Redis{Client: client}, nil
+}
+
+func (r *Redis) InitPubSubChannel() {
+	r.PubSub = r.Client.Subscribe("chat")
 }

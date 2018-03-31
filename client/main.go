@@ -11,12 +11,42 @@ import (
 	"syscall"
 
 	pb "github.com/clarencejychan/consolechat-grpc/console-chat"
+	"github.com/go-redis/redis"
 	"google.golang.org/grpc"
 )
 
 var (
+	redisAddr  = "localhost:6379"
 	serverAddr = flag.String("server_addr", "localhost:3000", "The server address in the format of host:port")
 )
+
+func initRedis(addr string) (*redis.Client, error) {
+	// Set up Redis
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	_, err := redisClient.Ping().Result()
+	if err != nil {
+		return nil, err
+	} else {
+		fmt.Println("Listening to redis on 6379")
+	}
+	return redisClient, nil
+}
+
+func listenForMessages(p *redis.PubSub, chat chan string) {
+	for {
+		m, err := p.ReceiveMessage()
+		if err != nil {
+			panic(err)
+		} else {
+			chat <- m.Payload
+		}
+	}
+}
 
 func handleInput(scanner *bufio.Scanner, msg chan string) {
 	// Read Input
@@ -30,6 +60,23 @@ func main() {
 	// Connect gRPC
 	flag.Parse()
 
+	// Init redis client
+	r, err := initRedis(redisAddr)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Close()
+
+	// Set up pub-sub
+	pubSub := r.Subscribe("chat")
+	chat := make(chan string, 1)
+
+	go listenForMessages(pubSub, chat)
+
+	//pong, err := r.Ping().Result()
+	//fmt.Println(pong, err)
+
+	// Init gRPC Client
 	opt := grpc.WithInsecure()
 	conn, err := grpc.Dial(*serverAddr, opt)
 	if err != nil {
@@ -38,8 +85,10 @@ func main() {
 	defer conn.Close()
 	ctx := context.Background()
 	client := pb.NewChatServiceClient(conn)
+
+	// Test Input
 	test := &pb.ConnectRequest{
-		User: "test",
+		User: "Clarence",
 	}
 	client.Connect(ctx, test)
 
@@ -59,6 +108,7 @@ func main() {
 	// Handle seperate thread in lightweight go routine
 	go handleInput(scanner, msg)
 
+	// Loop for Messaging
 loop:
 	for {
 		select {
@@ -70,6 +120,8 @@ loop:
 			break loop
 		case s := <-msg:
 			fmt.Println("Echoing: ", s)
+		case c := <-chat:
+			fmt.Println(c)
 		}
 	}
 }
