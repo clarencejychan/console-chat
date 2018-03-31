@@ -54,25 +54,31 @@ func listenForMessages(p *redis.PubSub, chat chan string) {
 func handleInput(scanner *bufio.Scanner, msg chan string) {
 	// Read Input
 	for scanner.Scan() {
+		//fmt.Println("\033[8m") // Hide input
 		m := scanner.Text()
 		msg <- m
 	}
 }
 
 // Initialize user entering the room
-func initUser(scanner *bufio.Scanner, client pb.ChatServiceClient, conn *grpc.ClientConn) {
+func initUser(ctx context.Context, scanner *bufio.Scanner, client pb.ChatServiceClient, conn *grpc.ClientConn) {
 	var n string
-	ctx := context.Background()
 
-	fmt.Println("> Enter your username")
-	scanner.Scan()
-	n = scanner.Text()
-	user = n
-	req := &pb.ConnectRequest{
-		User: n,
+	for {
+		fmt.Println("> Enter a username")
+		scanner.Scan()
+		n = scanner.Text()
+		user = n
+		req := &pb.ConnectRequest{
+			User: n,
+		}
+		_, err := client.Connect(ctx, req)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		break
 	}
-	client.Connect(ctx, req)
-
 }
 
 func main() {
@@ -108,6 +114,8 @@ func main() {
 
 	fmt.Println("--------------------")
 
+	ctx := context.Background()
+
 	// Initialize ChatServiceClient Handler
 	client := pb.NewChatServiceClient(conn)
 
@@ -119,7 +127,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	// Init User:
-	initUser(scanner, client, conn)
+	initUser(ctx, scanner, client, conn)
 
 	// Handle seperate thread in lightweight go routine
 	go handleInput(scanner, msg)
@@ -135,7 +143,15 @@ loop:
 			// Break out of the outer for statement and end the program
 			break loop
 		case s := <-msg:
-			fmt.Println("Echoing: ", s)
+			req := &pb.Message{
+				User:  user,
+				Speak: s,
+			}
+			_, err := client.ConsoleChat(ctx, req)
+
+			if err != nil {
+				panic(err)
+			}
 		case c := <-chat:
 			fmt.Println(c)
 		}

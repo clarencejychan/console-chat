@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	r "github.com/clarencejychan/console-chat/server/cmd/redis"
@@ -25,8 +26,15 @@ func Register(r *r.Redis) *ChatServiceServer {
 func (c *ChatServiceServer) Connect(ctx context.Context, req *pb.ConnectRequest) (*google_protobuf.Empty, error) {
 	userKey := "online." + req.GetUser()
 
-	err := c.r.Client.Publish("chat", req.GetUser()+" connected.").Err()
+	// Check if user previously existed
+	e := c.r.Client.Exists(userKey)
+	if e.Val() == int64(1) {
+		err := errors.New("Someone is connected with your username, please choose another.")
+		return nil, err
+	}
+
 	_ = c.r.Client.SetNX(userKey, req.GetUser(), 0)
+	err := c.r.Client.Publish("chat", req.GetUser()+" connected.").Err()
 	if err != nil {
 		panic(err)
 	}
@@ -42,7 +50,19 @@ func (c *ChatServiceServer) ListUsers(ctx context.Context, e *google_protobuf.Em
 
 // ConsoleChat sends the messages and makes sure all subscribers receive it
 func (c *ChatServiceServer) ConsoleChat(ctx context.Context, msg *pb.Message) (*google_protobuf.Empty, error) {
-	return nil, nil
+	user := msg.GetUser()
+	speak := msg.GetSpeak()
+	userKey := "online." + user
+
+	e := c.r.Client.Exists(userKey)
+	if e.Val() == int64(1) {
+		err := c.r.Client.Publish("chat", "> "+user+": "+speak).Err()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return &google_protobuf.Empty{}, nil
 }
 
 // Disconnect removes a user from the set of keys in redis
