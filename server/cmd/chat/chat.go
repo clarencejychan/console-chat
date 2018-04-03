@@ -67,5 +67,22 @@ func (c *ChatServiceServer) ConsoleChat(ctx context.Context, msg *pb.Message) (*
 
 // Disconnect removes a user from the set of keys in redis
 func (c *ChatServiceServer) Disconnect(ctx context.Context, req *pb.DisconnectRequest) (*google_protobuf.Empty, error) {
-	return nil, nil
+	// Check if user already exists as a key, if it does delete it and unsubscribe it.
+	user := req.GetUser()
+	userKey := "online." + user
+	e := c.r.Client.Exists(userKey)
+	if e.Val() == int64(1) {
+
+		err := c.r.Client.Publish("chat", "> "+user+" left the room").Err()
+		if err != nil {
+			panic(err)
+		}
+
+		errD := c.r.Client.Del(userKey)
+		if errD.Val() != int64(1) {
+			panic(err)
+		}
+	}
+
+	return &google_protobuf.Empty{}, nil
 }

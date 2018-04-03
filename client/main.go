@@ -138,7 +138,18 @@ loop:
 		select {
 		case <-sigs:
 			// Do things to exit client
-			fmt.Println("Got shutdown, exiting")
+			if user != "" {
+				req := &pb.DisconnectRequest{
+					User: user,
+				}
+				_, err := client.Disconnect(ctx, req)
+
+				if err != nil {
+					panic(err)
+				}
+			}
+
+			fmt.Println("Got shutdown, exiting and logging out.")
 
 			// Break out of the outer for statement and end the program
 			break loop
