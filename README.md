@@ -12,6 +12,8 @@ The publisher/subscriber model allows clients to subscribe to the server, while 
 ## Installation
 Set up a redis server (instructions found [here](https://redis.io/topics/quickstart)) and make the necessary configurations in the server/clients to point towards the correct port.
 
+Get the generated code using `go get -u github.com/clarencejychan/consolechat-grpc`
+
 Run `go run server.go` or `go build server.go` in `console-chat/server/cmd` and run the binary.
 
 Run `go run client.go` or `go build client.go` in `console-chat/client` and run the binary on as many consoles as you would like.
